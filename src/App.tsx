@@ -1,44 +1,12 @@
 import { useState } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
+import ProjectExplorer from "./components/ProjectExplorer";
 
 function App() {
-  const [selectedPath, setSelectedPath] = useState<string | null>(null);
-
-  const handleSelectFolder = async () => {
-    const selected = await open({
-      directory: true,
-      multiple: false,
-      title: "Select Root Directory",
-    });
-    if (selected) {
-      setSelectedPath(selected as string);
-    }
-  };
+  const [_selectedDirectory, setSelectedDirectory] = useState<string | null>(null);
 
   return (
     <div className="h-screen w-screen flex bg-slate-950 text-slate-100 overflow-hidden">
-      <aside className="w-[280px] flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
-        <div className="p-4 border-b border-slate-800">
-          <h1 className="text-lg font-semibold text-slate-100">EnvSmith</h1>
-          <p className="text-xs text-slate-500 mt-0.5">Environment Manager</p>
-        </div>
-        <div className="p-3">
-          <button
-            onClick={handleSelectFolder}
-            className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 rounded-lg font-medium text-sm transition-colors"
-          >
-            Select Root Directory
-          </button>
-        </div>
-        <div className="flex-1 overflow-y-auto p-3">
-          {selectedPath && (
-            <div className="text-xs text-slate-400">
-              <span className="text-slate-500">Root:</span>
-              <p className="mt-1 truncate font-mono text-slate-300">{selectedPath}</p>
-            </div>
-          )}
-        </div>
-      </aside>
+      <ProjectExplorer onDirectorySelected={setSelectedDirectory} />
       <main className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
         <header className="h-14 flex-shrink-0 border-b border-slate-800 flex items-center px-6">
           <h2 className="text-sm font-medium text-slate-400">The Vault</h2>
