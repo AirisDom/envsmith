@@ -77,10 +77,16 @@ fn read_env_file(file_path: String) -> Result<Vec<EnvEntry>, String> {
     Ok(entries)
 }
 
+#[tauri::command]
+fn write_env_file(file_path: String, content: String) -> Result<(), String> {
+    fs::write(&file_path, content)
+        .map_err(|e| format!("Failed to write file: {}", e))
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![scan_directory, read_env_file])
+        .invoke_handler(tauri::generate_handler![scan_directory, read_env_file, write_env_file])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
