@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { FolderOpen, FolderSearch, FileText, Loader2, FileX } from "lucide-react";
+import { FolderOpen, FolderSearch, Loader2, FileX } from "lucide-react";
+import FileListItem from "./FileListItem";
 
 interface ProjectExplorerProps {
   onDirectorySelected?: (path: string) => void;
@@ -56,17 +57,6 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile }: 
     return `.../${parts.slice(-2).join("/")}`;
   };
 
-  const getFileName = (path: string) => {
-    const parts = path.split(/[/\\]/);
-    return parts[parts.length - 1];
-  };
-
-  const getRelativePath = (filePath: string) => {
-    if (!selectedPath) return filePath;
-    const relative = filePath.replace(selectedPath, "").replace(/^[/\\]/, "");
-    return relative || getFileName(filePath);
-  };
-
   return (
     <aside className="w-[280px] flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
       <div className="p-4 border-b border-slate-800">
@@ -116,36 +106,13 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile }: 
                   {envFiles.length} file{envFiles.length !== 1 ? "s" : ""} found
                 </p>
                 {envFiles.map((filePath) => (
-                  <button
+                  <FileListItem
                     key={filePath}
-                    onClick={() => onFileSelected?.(filePath)}
-                    className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-start gap-2 group ${
-                      selectedFile === filePath
-                        ? "bg-blue-600/20 border border-blue-500/30"
-                        : "hover:bg-slate-800/70 border border-transparent"
-                    }`}
-                  >
-                    <FileText
-                      className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
-                        selectedFile === filePath ? "text-blue-400" : "text-slate-500 group-hover:text-slate-400"
-                      }`}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p
-                        className={`text-sm font-medium truncate ${
-                          selectedFile === filePath ? "text-blue-300" : "text-slate-300"
-                        }`}
-                      >
-                        {getFileName(filePath)}
-                      </p>
-                      <p
-                        className="text-xs text-slate-500 truncate"
-                        title={filePath}
-                      >
-                        {getRelativePath(filePath)}
-                      </p>
-                    </div>
-                  </button>
+                    filePath={filePath}
+                    isSelected={selectedFile === filePath}
+                    rootPath={selectedPath}
+                    onClick={(path) => onFileSelected?.(path)}
+                  />
                 ))}
               </div>
             ) : (
