@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { FileKey2, Loader2 } from "lucide-react";
+import EnvRow from "./EnvRow";
 
 interface EnvEntry {
   key: string;
@@ -15,6 +16,14 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
   const [entries, setEntries] = useState<EnvEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleEntryChange = (index: number, field: "key" | "value", newValue: string) => {
+    setEntries((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: newValue };
+      return updated;
+    });
+  };
 
   useEffect(() => {
     if (!selectedFile) {
@@ -115,35 +124,12 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
           </thead>
           <tbody>
             {entries.map((entry, index) => (
-              <tr
+              <EnvRow
                 key={index}
-                className="border-b border-slate-800/50 hover:bg-slate-800/30 transition-colors"
-              >
-                <td className="py-3 px-4">
-                  <input
-                    type="text"
-                    value={entry.key}
-                    onChange={(e) => {
-                      const newEntries = [...entries];
-                      newEntries[index] = { ...entry, key: e.target.value };
-                      setEntries(newEntries);
-                    }}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
-                  />
-                </td>
-                <td className="py-3 px-4">
-                  <input
-                    type="text"
-                    value={entry.value}
-                    onChange={(e) => {
-                      const newEntries = [...entries];
-                      newEntries[index] = { ...entry, value: e.target.value };
-                      setEntries(newEntries);
-                    }}
-                    className="w-full bg-slate-800/50 border border-slate-700 rounded px-3 py-2 text-sm text-slate-100 font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500"
-                  />
-                </td>
-              </tr>
+                entry={entry}
+                index={index}
+                onChange={handleEntryChange}
+              />
             ))}
           </tbody>
         </table>
