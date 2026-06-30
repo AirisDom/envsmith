@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { FileKey2, Loader2 } from "lucide-react";
+import { FileKey2, Loader2, Plus } from "lucide-react";
 import EnvRow from "./EnvRow";
 
 interface EnvEntry {
@@ -23,6 +23,14 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
       updated[index] = { ...updated[index], [field]: newValue };
       return updated;
     });
+  };
+
+  const handleAddEntry = () => {
+    setEntries((prev) => [...prev, { key: "", value: "" }]);
+  };
+
+  const handleDeleteEntry = (index: number) => {
+    setEntries((prev) => prev.filter((_, i) => i !== index));
   };
 
   useEffect(() => {
@@ -100,9 +108,17 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
             <FileKey2 className="w-10 h-10 text-slate-500" />
           </div>
           <h3 className="text-xl font-semibold text-slate-300 mb-2">Empty File</h3>
-          <p className="text-sm text-slate-500 max-w-sm leading-relaxed">
+          <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-6">
             This .env file has no variables defined
           </p>
+          <button
+            type="button"
+            onClick={handleAddEntry}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          >
+            <Plus className="w-4 h-4" />
+            Add Variable
+          </button>
         </div>
       </div>
     );
@@ -120,6 +136,7 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
               <th className="text-left py-3 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Value
               </th>
+              <th className="w-12"></th>
             </tr>
           </thead>
           <tbody>
@@ -129,10 +146,21 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
                 entry={entry}
                 index={index}
                 onChange={handleEntryChange}
+                onDelete={handleDeleteEntry}
               />
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="flex-shrink-0 pt-4 border-t border-slate-800">
+        <button
+          type="button"
+          onClick={handleAddEntry}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+        >
+          <Plus className="w-4 h-4" />
+          Add Variable
+        </button>
       </div>
     </div>
   );

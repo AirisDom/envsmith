@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Trash2 } from "lucide-react";
 
 interface EnvEntry {
   key: string;
@@ -10,9 +10,10 @@ interface EnvRowProps {
   entry: EnvEntry;
   index: number;
   onChange: (index: number, field: "key" | "value", newValue: string) => void;
+  onDelete: (index: number) => void;
 }
 
-function EnvRow({ entry, index, onChange }: EnvRowProps) {
+function EnvRow({ entry, index, onChange, onDelete }: EnvRowProps) {
   const [isVisible, setIsVisible] = useState(false);
 
   return (
@@ -44,6 +45,16 @@ function EnvRow({ entry, index, onChange }: EnvRowProps) {
             {isVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
           </button>
         </div>
+      </td>
+      <td className="py-3 px-2 w-12">
+        <button
+          type="button"
+          onClick={() => onDelete(index)}
+          className="p-2 rounded bg-slate-800/50 border border-slate-700 text-slate-400 hover:text-red-400 hover:bg-red-900/30 hover:border-red-800 focus:outline-none focus:ring-2 focus:ring-red-500/50 transition-all opacity-0 group-hover:opacity-100"
+          aria-label="Delete row"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </td>
     </tr>
   );
