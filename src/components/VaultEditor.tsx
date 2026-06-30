@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { FileKey2, Loader2, Plus } from "lucide-react";
+import { FileKey2, Loader2, Plus, Save } from "lucide-react";
 import EnvRow from "./EnvRow";
 
 interface EnvEntry {
@@ -16,6 +16,8 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
   const [entries, setEntries] = useState<EnvEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleEntryChange = (index: number, field: "key" | "value", newValue: string) => {
     setEntries((prev) => {
@@ -31,6 +33,25 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
 
   const handleDeleteEntry = (index: number) => {
     setEntries((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSave = async () => {
+    if (!selectedFile) return;
+    setSaving(true);
+    setSaveSuccess(false);
+    try {
+      const content = entries
+        .filter((e) => e.key.trim() !== "")
+        .map((e) => `${e.key}="${e.value}"`)
+        .join("\n");
+      await invoke("write_env_file", { filePath: selectedFile, content });
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -126,6 +147,21 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-6">
+      <div className="flex-shrink-0 flex justify-end mb-4">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-emerald-700 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+        >
+          {saving ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4" />
+          )}
+          {saveSuccess ? "Saved!" : saving ? "Saving..." : "Save Changes"}
+        </button>
+      </div>
       <div className="flex-1 overflow-auto">
         <table className="w-full border-collapse">
           <thead>
