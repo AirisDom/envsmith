@@ -1,16 +1,17 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { FolderOpen, FolderSearch, Loader2, FileX } from "lucide-react";
+import { AlertTriangle, FolderOpen, FolderSearch, Loader2, FileX, RefreshCw } from "lucide-react";
 import FileListItem from "./FileListItem";
 
 interface ProjectExplorerProps {
   onDirectorySelected?: (path: string) => void;
   onFileSelected?: (path: string) => void;
   selectedFile?: string | null;
+  onToast?: (type: "success" | "error", message: string) => void;
 }
 
-function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile }: ProjectExplorerProps) {
+function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, onToast }: ProjectExplorerProps) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
@@ -32,6 +33,9 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile }: 
         onDirectorySelected?.(path);
         await scanDirectory(path);
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Failed to open folder picker";
+      onToast?.("error", message);
     } finally {
       setIsSelecting(false);
     }
@@ -45,7 +49,9 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile }: 
       const files = await invoke<string[]>("scan_directory", { targetPath: path });
       setEnvFiles(files);
     } catch (error) {
-      setScanError(error instanceof Error ? error.message : "Failed to scan directory");
+      const message = error instanceof Error ? error.message : "Failed to scan directory";
+      setScanError(message);
+      onToast?.("error", `Scan failed: ${message}`);
     } finally {
       setIsScanning(false);
     }
@@ -97,8 +103,22 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile }: 
                 <p className="text-xs text-slate-500">Scanning for .env files...</p>
               </div>
             ) : scanError ? (
-              <div className="bg-red-900/20 rounded-lg p-3 border border-red-800/50">
-                <p className="text-xs text-red-400">{scanError}</p>
+              <div className="bg-red-900/20 rounded-lg p-4 border border-red-800/50">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-red-300 mb-1">Scan Failed</p>
+                    <p className="text-xs text-red-400/80 break-words">{scanError}</p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => selectedPath && scanDirectory(selectedPath)}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-800/30 hover:bg-red-800/50 border border-red-700/50 text-red-300 text-xs font-medium transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                  Retry Scan
+                </button>
               </div>
             ) : envFiles.length > 0 ? (
               <div className="space-y-1">

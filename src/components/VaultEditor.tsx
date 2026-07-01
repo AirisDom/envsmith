@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { FileKey2, Loader2, Plus, Save } from "lucide-react";
+import { AlertTriangle, FileKey2, Loader2, Plus, Save } from "lucide-react";
 import EnvRow from "./EnvRow";
 
 interface EnvEntry {
@@ -44,9 +44,10 @@ function VaultEditor({ selectedFile, onToast }: VaultEditorProps) {
         .map((e) => `${e.key}="${e.value}"`)
         .join("\n");
       await invoke("write_env_file", { filePath: selectedFile, content });
-      onToast("success", "Saved!");
+      onToast("success", "Changes saved successfully!");
     } catch (err) {
-      onToast("error", err instanceof Error ? err.message : String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      onToast("error", `Failed to save: ${message}`);
     } finally {
       setSaving(false);
     }
@@ -68,15 +69,17 @@ function VaultEditor({ selectedFile, onToast }: VaultEditorProps) {
         });
         setEntries(result);
       } catch (err) {
-        setError(err instanceof Error ? err.message : String(err));
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
         setEntries([]);
+        onToast("error", `Failed to read file: ${message}`);
       } finally {
         setLoading(false);
       }
     };
 
     loadFile();
-  }, [selectedFile]);
+  }, [selectedFile, onToast]);
 
   if (!selectedFile) {
     return (
@@ -106,14 +109,39 @@ function VaultEditor({ selectedFile, onToast }: VaultEditorProps) {
   }
 
   if (error) {
+    const handleRetry = async () => {
+      if (!selectedFile) return;
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await invoke<EnvEntry[]>("read_env_file", {
+          filePath: selectedFile,
+        });
+        setEntries(result);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+        onToast("error", `Failed to read file: ${message}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     return (
       <div className="flex-1 flex items-center justify-center">
         <div className="text-center p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-900/30 flex items-center justify-center ring-1 ring-red-800/50">
-            <FileKey2 className="w-10 h-10 text-red-400" />
+            <AlertTriangle className="w-10 h-10 text-red-400" />
           </div>
           <h3 className="text-xl font-semibold text-red-300 mb-2">Error Loading File</h3>
-          <p className="text-sm text-slate-500 max-w-sm leading-relaxed">{error}</p>
+          <p className="text-sm text-slate-500 max-w-sm leading-relaxed mb-6">{error}</p>
+          <button
+            type="button"
+            onClick={handleRetry}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500/50"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );

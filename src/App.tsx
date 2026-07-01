@@ -23,6 +23,7 @@ function App() {
         onDirectorySelected={setSelectedDirectory}
         onFileSelected={setSelectedFile}
         selectedFile={selectedFile}
+        onToast={addToast}
       />
       <main className="flex-1 flex flex-col bg-slate-950 overflow-hidden">
         <header className="h-14 flex-shrink-0 border-b border-slate-800 flex items-center px-6">
