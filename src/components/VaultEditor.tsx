@@ -10,14 +10,14 @@ interface EnvEntry {
 
 interface VaultEditorProps {
   selectedFile: string | null;
+  onToast: (type: "success" | "error", message: string) => void;
 }
 
-function VaultEditor({ selectedFile }: VaultEditorProps) {
+function VaultEditor({ selectedFile, onToast }: VaultEditorProps) {
   const [entries, setEntries] = useState<EnvEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const handleEntryChange = (index: number, field: "key" | "value", newValue: string) => {
     setEntries((prev) => {
@@ -38,17 +38,15 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
   const handleSave = async () => {
     if (!selectedFile) return;
     setSaving(true);
-    setSaveSuccess(false);
     try {
       const content = entries
         .filter((e) => e.key.trim() !== "")
         .map((e) => `${e.key}="${e.value}"`)
         .join("\n");
       await invoke("write_env_file", { filePath: selectedFile, content });
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 2000);
+      onToast("success", "Saved!");
     } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+      onToast("error", err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }
@@ -159,7 +157,7 @@ function VaultEditor({ selectedFile }: VaultEditorProps) {
           ) : (
             <Save className="w-4 h-4" />
           )}
-          {saveSuccess ? "Saved!" : saving ? "Saving..." : "Save Changes"}
+          {saving ? "Saving..." : "Save Changes"}
         </button>
       </div>
       <div className="flex-1 overflow-auto">
