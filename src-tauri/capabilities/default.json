@@ -1,13 +1,35 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "enables the default permissions",
+  "description": "Capability for EnvSmith to manage environment variables",
   "windows": [
     "main"
   ],
   "permissions": [
     "core:default",
     "dialog:default",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    {
+      "identifier": "fs:allow-read-text-file",
+      "allow": [
+        { "path": "**/.env" },
+        { "path": "**/.env.local" },
+        { "path": "**/.env.development" },
+        { "path": "**/.env.production" },
+        { "path": "**/.env.*" }
+      ]
+    },
+    {
+      "identifier": "fs:allow-write-text-file",
+      "allow": [
+        { "path": "**/.env" },
+        { "path": "**/.env.local" },
+        { "path": "**/.env.development" },
+        { "path": "**/.env.production" },
+        { "path": "**/.env.*" }
+      ]
+    },
+    "fs:allow-read-dir",
+    "fs:allow-exists"
   ]
 }
