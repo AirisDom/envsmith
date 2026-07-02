@@ -9,14 +9,17 @@ interface ProjectExplorerProps {
   onFileSelected?: (path: string) => void;
   selectedFile?: string | null;
   onToast?: (type: "success" | "error", message: string) => void;
+  isEditorLoading?: boolean;
 }
 
-function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, onToast }: ProjectExplorerProps) {
+function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, onToast, isEditorLoading }: ProjectExplorerProps) {
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [isSelecting, setIsSelecting] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [envFiles, setEnvFiles] = useState<string[]>([]);
   const [scanError, setScanError] = useState<string | null>(null);
+
+  const isLoading = isSelecting || isScanning;
 
   const handleSelectFolder = async () => {
     setIsSelecting(true);
@@ -64,27 +67,33 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, on
   };
 
   return (
-    <aside className="w-[280px] flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col">
+    <aside className="w-[280px] flex-shrink-0 bg-slate-900 border-r border-slate-800 flex flex-col transition-opacity duration-200">
       <div className="p-4 border-b border-slate-800">
-        <h1 className="text-lg font-semibold text-slate-100">EnvSmith</h1>
+        <h1 className="text-lg font-semibold text-slate-100 transition-colors">EnvSmith</h1>
         <p className="text-xs text-slate-500 mt-0.5">Environment Manager</p>
       </div>
 
       <div className="p-3">
         <button
           onClick={handleSelectFolder}
-          disabled={isSelecting || isScanning}
-          className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed rounded-lg font-medium text-sm transition-colors flex items-center justify-center gap-2"
+          disabled={isLoading || isEditorLoading}
+          className="w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-blue-800 disabled:opacity-60 rounded-lg font-medium text-sm transition-all duration-200 flex items-center justify-center gap-2 hover:shadow-lg hover:shadow-blue-500/20 active:scale-[0.98]"
         >
-          <FolderOpen className="w-4 h-4" />
-          {isSelecting ? "Selecting..." : "Select Root Directory"}
+          {isLoading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <FolderOpen className="w-4 h-4" />
+          )}
+          <span className="transition-opacity">
+            {isSelecting ? "Opening..." : isScanning ? "Scanning..." : "Select Root Directory"}
+          </span>
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-3">
         {selectedPath ? (
-          <div className="space-y-3">
-            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50">
+          <div className="space-y-3 animate-fade-in">
+            <div className="bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 transition-all duration-200 hover:border-slate-600/50">
               <div className="flex items-center gap-2 text-xs text-slate-400 mb-1">
                 <FolderSearch className="w-3.5 h-3.5" />
                 <span>Root Directory</span>
@@ -98,12 +107,15 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, on
             </div>
 
             {isScanning ? (
-              <div className="flex flex-col items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 text-blue-500 animate-spin mb-2" />
-                <p className="text-xs text-slate-500">Scanning for .env files...</p>
+              <div className="flex flex-col items-center justify-center py-8 animate-fade-in">
+                <div className="relative">
+                  <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                  <div className="absolute inset-0 blur-xl bg-blue-500/30 animate-pulse" />
+                </div>
+                <p className="text-xs text-slate-500 mt-4 animate-pulse-subtle">Scanning for .env files...</p>
               </div>
             ) : scanError ? (
-              <div className="bg-red-900/20 rounded-lg p-4 border border-red-800/50">
+              <div className="bg-red-900/20 rounded-lg p-4 border border-red-800/50 animate-scale-in">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
                   <div className="flex-1 min-w-0">
@@ -114,7 +126,8 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, on
                 <button
                   type="button"
                   onClick={() => selectedPath && scanDirectory(selectedPath)}
-                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-800/30 hover:bg-red-800/50 border border-red-700/50 text-red-300 text-xs font-medium transition-colors"
+                  disabled={isLoading}
+                  className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 rounded-md bg-red-800/30 hover:bg-red-800/50 active:bg-red-800/70 border border-red-700/50 text-red-300 text-xs font-medium transition-all duration-200 hover:border-red-600/50 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                   Retry Scan
@@ -125,18 +138,24 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, on
                 <p className="text-xs text-slate-500 mb-2">
                   {envFiles.length} file{envFiles.length !== 1 ? "s" : ""} found
                 </p>
-                {envFiles.map((filePath) => (
-                  <FileListItem
+                {envFiles.map((filePath, index) => (
+                  <div
                     key={filePath}
-                    filePath={filePath}
-                    isSelected={selectedFile === filePath}
-                    rootPath={selectedPath}
-                    onClick={(path) => onFileSelected?.(path)}
-                  />
+                    className="animate-slide-up"
+                    style={{ animationDelay: `${index * 30}ms` }}
+                  >
+                    <FileListItem
+                      filePath={filePath}
+                      isSelected={selectedFile === filePath}
+                      rootPath={selectedPath}
+                      onClick={(path) => onFileSelected?.(path)}
+                      disabled={isEditorLoading}
+                    />
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="flex flex-col items-center justify-center py-8 text-center animate-fade-in">
                 <FileX className="w-8 h-8 text-slate-700 mb-2" />
                 <p className="text-xs text-slate-500">No .env files found</p>
                 <p className="text-xs text-slate-600 mt-1">
@@ -146,7 +165,7 @@ function ProjectExplorer({ onDirectorySelected, onFileSelected, selectedFile, on
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center h-32 text-center">
+          <div className="flex flex-col items-center justify-center h-32 text-center animate-fade-in">
             <FolderSearch className="w-8 h-8 text-slate-700 mb-2" />
             <p className="text-xs text-slate-600">
               Select a directory to scan for environment files
